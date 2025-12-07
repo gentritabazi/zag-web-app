@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Boxes,
-  Plus,
-  Minus,
-  ArrowUpDown,
-  History,
-  Search,
-} from "lucide-react";
+import { Boxes, Plus, Minus, ArrowUpDown, History, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,7 +47,9 @@ import {
 export default function StockPage() {
   const [stockLevels, setStockLevels] = useState<StockLevel[]>([]);
   const [stockHistory, setStockHistory] = useState<StockEntry[]>([]);
-  const [products, setProducts] = useState<Array<{ id: string; name: string }>>([]);
+  const [products, setProducts] = useState<Array<{ id: string; name: string }>>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<"add" | "adjust">("add");
@@ -140,31 +135,38 @@ export default function StockPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Stock Management</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Stock Management
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Add stock or adjust inventory levels
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => handleOpenDialog("adjust")}
-            className="gap-2"
+            className="gap-2 w-full sm:w-auto"
           >
             <ArrowUpDown className="h-4 w-4" />
-            Adjust Stock
+            <span className="hidden sm:inline">Adjust Stock</span>
+            <span className="sm:hidden">Adjust</span>
           </Button>
-          <Button onClick={() => handleOpenDialog("add")} className="gap-2">
+          <Button
+            onClick={() => handleOpenDialog("add")}
+            className="gap-2 w-full sm:w-auto"
+          >
             <Plus className="h-4 w-4" />
-            Add Stock
+            <span className="hidden sm:inline">Add Stock</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-[425px] mx-4">
           <DialogHeader>
             <DialogTitle>
               {dialogMode === "add" ? "Add Stock" : "Adjust Stock"}
@@ -178,7 +180,10 @@ export default function StockPage() {
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="product">Product</Label>
-              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+              <Select
+                value={selectedProductId}
+                onValueChange={setSelectedProductId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a product" />
                 </SelectTrigger>
@@ -201,7 +206,9 @@ export default function StockPage() {
                 min="0"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                placeholder={dialogMode === "add" ? "Enter quantity" : "Enter new level"}
+                placeholder={
+                  dialogMode === "add" ? "Enter quantity" : "Enter new level"
+                }
               />
               {selectedProductId && dialogMode === "add" && (
                 <p className="text-xs text-muted-foreground">
@@ -221,11 +228,19 @@ export default function StockPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={!selectedProductId || !quantity}>
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedProductId || !quantity}
+              className="w-full sm:w-auto"
+            >
               {dialogMode === "add" ? "Add Stock" : "Update Stock"}
             </Button>
           </DialogFooter>
@@ -236,17 +251,17 @@ export default function StockPage() {
         {/* Current Stock Levels */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Boxes className="h-5 w-5 text-primary" />
                   Current Stock
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   Inventory levels for all products
                 </CardDescription>
               </div>
-              <div className="relative w-48">
+              <div className="relative w-full sm:w-48">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search..."
@@ -271,18 +286,20 @@ export default function StockPage() {
                 {filteredStock.map((item) => (
                   <div
                     key={item.productId}
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border/50"
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border/50 gap-3"
                   >
-                    <div>
-                      <p className="font-medium">{item.productName}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate text-sm sm:text-base">
+                        {item.productName}
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {item.quantity === 0
                           ? "Out of stock"
                           : `${item.quantity} units available`}
                       </p>
                     </div>
                     <div
-                      className={`text-2xl font-bold ${
+                      className={`text-xl sm:text-2xl font-bold shrink-0 ${
                         item.quantity === 0
                           ? "text-red-400"
                           : item.quantity < 10
@@ -302,11 +319,13 @@ export default function StockPage() {
         {/* Stock History */}
         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <History className="h-5 w-5 text-primary" />
               Stock History
             </CardTitle>
-            <CardDescription>Recent stock changes and movements</CardDescription>
+            <CardDescription className="text-sm">
+              Recent stock changes and movements
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {stockHistory.length === 0 ? (
@@ -318,44 +337,94 @@ export default function StockPage() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-center">Change</TableHead>
-                    <TableHead className="text-right">Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead className="text-center">Change</TableHead>
+                        <TableHead className="text-right">Date</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {stockHistory.slice(0, 10).map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="font-medium">
+                            {entry.productName}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className={`gap-1 ${getTypeColor(entry.type)}`}
+                            >
+                              {getTypeIcon(entry.type)}
+                              {entry.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="text-muted-foreground">
+                              {entry.previousQuantity}
+                            </span>
+                            <span className="mx-2">→</span>
+                            <span className="font-medium">
+                              {entry.newQuantity}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {formatDate(entry.createdAt)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-3">
                   {stockHistory.slice(0, 10).map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">
-                        {entry.productName}
-                      </TableCell>
-                      <TableCell>
+                    <div
+                      key={entry.id}
+                      className="p-4 rounded-lg bg-secondary/30 border border-border/50 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {entry.productName}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDate(entry.createdAt)}
+                          </p>
+                        </div>
                         <Badge
                           variant="secondary"
-                          className={`gap-1 ${getTypeColor(entry.type)}`}
+                          className={`gap-1 ${getTypeColor(
+                            entry.type
+                          )} shrink-0 ml-2`}
                         >
                           {getTypeIcon(entry.type)}
                           {entry.type}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-muted-foreground">
-                          {entry.previousQuantity}
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                        <span className="text-sm text-muted-foreground">
+                          Change:
                         </span>
-                        <span className="mx-2">→</span>
-                        <span className="font-medium">{entry.newQuantity}</span>
-                      </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">
-                        {formatDate(entry.createdAt)}
-                      </TableCell>
-                    </TableRow>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">
+                            {entry.previousQuantity}
+                          </span>
+                          <span>→</span>
+                          <span className="font-medium">
+                            {entry.newQuantity}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -363,4 +432,3 @@ export default function StockPage() {
     </div>
   );
 }
-

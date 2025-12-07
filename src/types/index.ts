@@ -22,10 +22,22 @@ export interface StockEntry {
   createdAt: Date;
 }
 
+export interface Customer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Sale {
   id: string;
   productId: string;
   productName: string;
+  customerId?: string;
+  customerName?: string;
   quantity: number;
   unitPrice: number;
   totalPrice: number;

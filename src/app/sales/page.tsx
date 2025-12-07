@@ -8,6 +8,7 @@ import {
   Calendar,
   DollarSign,
   Search,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,22 +43,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sale, Product } from "@/types";
+import { Sale, Product, Customer } from "@/types";
 import {
   getProducts,
   getSales,
   recordSale,
   getStockLevel,
+  getCustomers,
 } from "@/lib/store";
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Form state
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const [quantity, setQuantity] = useState("");
   const [customPrice, setCustomPrice] = useState("");
   const [useCustomPrice, setUseCustomPrice] = useState(false);
@@ -80,6 +85,7 @@ export default function SalesPage() {
     const allSales = getSales();
     setSales(allSales);
     setProducts(getProducts());
+    setCustomers(getCustomers());
     calculateStats(allSales);
   };
 
@@ -108,7 +114,15 @@ export default function SalesPage() {
   };
 
   const filteredSales = sales.filter((s) =>
-    s.productName.toLowerCase().includes(searchTerm.toLowerCase())
+    s.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCustomers = customers.filter((c) =>
+    c.firstName.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    c.lastName.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    c.username.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    c.email?.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
@@ -116,6 +130,8 @@ export default function SalesPage() {
 
   const handleOpenDialog = () => {
     setSelectedProductId("");
+    setSelectedCustomerId("");
+    setCustomerSearchTerm("");
     setQuantity("");
     setCustomPrice("");
     setUseCustomPrice(false);
@@ -130,7 +146,12 @@ export default function SalesPage() {
         ? parseFloat(customPrice)
         : undefined;
       
-      recordSale(selectedProductId, parseInt(quantity), price);
+      recordSale(
+        selectedProductId,
+        parseInt(quantity),
+        price,
+        selectedCustomerId || undefined
+      );
       setIsDialogOpen(false);
       loadData();
     } catch (error) {
@@ -170,21 +191,21 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Sales</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Sales</h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Record and track your sales transactions
           </p>
         </div>
-        <Button onClick={handleOpenDialog} className="gap-2">
+        <Button onClick={handleOpenDialog} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Record Sale
         </Button>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-[425px] mx-4">
           <DialogHeader>
             <DialogTitle>Record New Sale</DialogTitle>
             <DialogDescription>
@@ -192,6 +213,79 @@ export default function SalesPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="customer">Customer (Optional)</Label>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search customers..."
+                    value={customerSearchTerm}
+                    onChange={(e) => {
+                      setCustomerSearchTerm(e.target.value);
+                      if (!e.target.value) {
+                        setSelectedCustomerId("");
+                      }
+                    }}
+                    className="pl-9"
+                  />
+                </div>
+                {customerSearchTerm && filteredCustomers.length > 0 && !selectedCustomerId && (
+                  <div className="border rounded-md max-h-48 overflow-auto">
+                    {filteredCustomers.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomerId(customer.id);
+                          setCustomerSearchTerm(`${customer.firstName} ${customer.lastName}`);
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-secondary/50 flex items-center gap-2"
+                      >
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{customer.firstName} {customer.lastName}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">@{customer.username}</span>
+                            {customer.email && (
+                              <>
+                                <span className="text-xs text-muted-foreground">•</span>
+                                <span className="text-xs text-muted-foreground">{customer.email}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedCustomerId && (
+                  <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/50 border">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium">
+                        {(() => {
+                          const customer = customers.find(c => c.id === selectedCustomerId);
+                          return customer ? `${customer.firstName} ${customer.lastName}` : '';
+                        })()}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCustomerId("");
+                        setCustomerSearchTerm("");
+                      }}
+                      className="h-6 w-6 p-0"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="product">Product</Label>
               <Select value={selectedProductId} onValueChange={setSelectedProductId}>
@@ -280,13 +374,18 @@ export default function SalesPage() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!selectedProductId || !quantity || parseInt(quantity) > currentStock}
+              className="w-full sm:w-auto"
             >
               Record Sale
             </Button>
@@ -383,6 +482,7 @@ export default function SalesPage() {
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Product</TableHead>
+                  <TableHead className="hidden sm:table-cell">Customer</TableHead>
                   <TableHead className="text-center">Quantity</TableHead>
                   <TableHead className="text-right">Unit Price</TableHead>
                   <TableHead className="text-right">Total</TableHead>
@@ -396,6 +496,16 @@ export default function SalesPage() {
                       {formatDate(sale.createdAt)}
                     </TableCell>
                     <TableCell className="font-medium">{sale.productName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {sale.customerName ? (
+                        <div className="flex items-center gap-2">
+                          <User className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-sm">{sale.customerName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center">{sale.quantity}</TableCell>
                     <TableCell className="text-right">
                       {formatCurrency(sale.unitPrice)}

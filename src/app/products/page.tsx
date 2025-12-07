@@ -52,14 +52,14 @@ import {
 } from "@/lib/store";
 
 const CATEGORIES = [
-  "Electronics",
-  "Clothing",
-  "Food & Beverages",
-  "Home & Garden",
-  "Health & Beauty",
-  "Sports & Outdoors",
-  "Toys & Games",
-  "Books & Media",
+  "Skincare",
+  "Makeup",
+  "Hair Care",
+  "Fragrances",
+  "Nail Care",
+  "Body Care",
+  "Tools & Brushes",
+  "Men's Grooming",
   "Other",
 ];
 

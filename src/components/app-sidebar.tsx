@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   LayoutDashboard,
   TrendingUp,
+  Users,
 } from "lucide-react";
 
 import {
@@ -44,6 +45,11 @@ const navigation = [
     title: "Sales",
     href: "/sales",
     icon: ShoppingCart,
+  },
+  {
+    title: "Customers",
+    href: "/customers",
+    icon: Users,
   },
 ];
 

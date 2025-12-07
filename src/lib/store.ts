@@ -1,11 +1,12 @@
 "use client";
 
-import { Product, StockEntry, Sale, StockLevel } from "@/types";
+import { Product, StockEntry, Sale, StockLevel, Customer } from "@/types";
 
 const PRODUCTS_KEY = "zag_products";
 const STOCK_KEY = "zag_stock";
 const SALES_KEY = "zag_sales";
 const STOCK_LEVELS_KEY = "zag_stock_levels";
+const CUSTOMERS_KEY = "zag_customers";
 
 // Helper to generate IDs
 export const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -163,7 +164,8 @@ export const getSales = (): Sale[] => {
 export const recordSale = (
   productId: string,
   quantity: number,
-  unitPrice?: number
+  unitPrice?: number,
+  customerId?: string
 ): Sale => {
   const products = getProducts();
   const product = products.find(p => p.id === productId);
@@ -176,12 +178,23 @@ export const recordSale = (
   const totalPrice = price * quantity;
   const profit = (price - product.purchasePrice) * quantity;
   
+  // Get customer info if provided
+  let customerName: string | undefined;
+  if (customerId) {
+    const customer = getCustomer(customerId);
+    if (customer) {
+      customerName = `${customer.firstName} ${customer.lastName}`;
+    }
+  }
+  
   // Record sale
   const sales = getSales();
   const sale: Sale = {
     id: generateId(),
     productId,
     productName: product.name,
+    customerId,
+    customerName,
     quantity,
     unitPrice: price,
     totalPrice,
@@ -195,6 +208,125 @@ export const recordSale = (
   addStockEntry(productId, 'sale', quantity, `Sale: ${quantity} units`);
   
   return sale;
+};
+
+// Customers
+export const getCustomers = (): Customer[] => {
+  if (typeof window === "undefined") return [];
+  const data = localStorage.getItem(CUSTOMERS_KEY);
+  return data ? JSON.parse(data) : [];
+};
+
+export const getCustomer = (id: string): Customer | null => {
+  const customers = getCustomers();
+  return customers.find(c => c.id === id) || null;
+};
+
+export const saveCustomer = (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">): Customer => {
+  const customers = getCustomers();
+  
+  // Check for unique username
+  if (customers.some(c => c.username.toLowerCase() === customer.username.toLowerCase())) {
+    throw new Error("Username already exists");
+  }
+  
+  // Check for unique email if provided
+  if (customer.email && customers.some(c => c.email?.toLowerCase() === customer.email?.toLowerCase())) {
+    throw new Error("Email already exists");
+  }
+  
+  const newCustomer: Customer = {
+    ...customer,
+    id: generateId(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  customers.push(newCustomer);
+  localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
+  
+  return newCustomer;
+};
+
+export const updateCustomer = (id: string, updates: Partial<Customer>): Customer | null => {
+  const customers = getCustomers();
+  const index = customers.findIndex(c => c.id === id);
+  if (index === -1) return null;
+  
+  // Check for unique username (excluding current customer)
+  if (updates.username && customers.some(c => c.id !== id && c.username.toLowerCase() === updates.username?.toLowerCase())) {
+    throw new Error("Username already exists");
+  }
+  
+  // Check for unique email (excluding current customer)
+  if (updates.email && customers.some(c => c.id !== id && c.email?.toLowerCase() === updates.email?.toLowerCase())) {
+    throw new Error("Email already exists");
+  }
+  
+  customers[index] = {
+    ...customers[index],
+    ...updates,
+    updatedAt: new Date(),
+  };
+  localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
+  
+  return customers[index];
+};
+
+export const deleteCustomer = (id: string): boolean => {
+  const customers = getCustomers();
+  const filtered = customers.filter(c => c.id !== id);
+  if (filtered.length === customers.length) return false;
+  localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(filtered));
+  return true;
+};
+
+export const generateUsernameSuggestion = (firstName?: string, lastName?: string): string => {
+  const customers = getCustomers();
+  const existingUsernames = new Set(customers.map(c => c.username.toLowerCase()));
+  
+  // If we have first and last name, use them to generate username
+  if (firstName && lastName) {
+    const first = firstName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
+    const last = lastName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 8);
+    const baseUsername = `${first}${last}`;
+    
+    if (baseUsername && !existingUsernames.has(baseUsername)) {
+      return baseUsername;
+    }
+    
+    let counter = 1;
+    let username = `${baseUsername}${counter}`;
+    while (existingUsernames.has(username.toLowerCase()) && counter < 1000) {
+      counter++;
+      username = `${baseUsername}${counter}`;
+    }
+    return username;
+  }
+  
+  // If we only have first name
+  if (firstName) {
+    const cleanBase = firstName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
+    if (cleanBase && !existingUsernames.has(cleanBase)) {
+      return cleanBase;
+    }
+    let counter = 1;
+    let username = `${cleanBase}${counter}`;
+    while (existingUsernames.has(username.toLowerCase()) && counter < 1000) {
+      counter++;
+      username = `${cleanBase}${counter}`;
+    }
+    return username;
+  }
+  
+  // Generate random username
+  const randomNum = Math.floor(Math.random() * 10000);
+  let username = `customer${randomNum}`;
+  let counter = 1;
+  while (existingUsernames.has(username.toLowerCase())) {
+    username = `customer${randomNum}${counter}`;
+    counter++;
+  }
+  return username;
 };
 
 // Dashboard stats
